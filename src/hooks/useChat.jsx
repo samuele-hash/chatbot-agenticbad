@@ -1,6 +1,9 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
+// Locale: .env con VITE_API_URL=http://localhost:10000 | Online: Render Environment con URL backend
 const backendUrl = import.meta.env.VITE_API_URL || "https://www.agenticbad.com";
+// Debug: in console (F12) vedi quale URL usa il frontend per le API
+if (typeof window !== "undefined") console.log("[Chat] Backend API URL:", backendUrl);
 
 const ChatContext = createContext();
 
@@ -17,17 +20,26 @@ export const ChatProvider = ({ children }) => {
         body: JSON.stringify({ message }),
       });
   
+      const text = await response.text();
       if (!response.ok) {
+        console.error("[Chat] Risposta non OK:", response.status, "Body:", text.slice(0, 300));
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-  
-      const data = await response.json();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        console.error("[Chat] La risposta non è JSON. URL:", `${backendUrl}/chat`, "Status:", response.status);
+        console.error("[Chat] Inizio risposta ricevuta:", text.slice(0, 500));
+        throw new Error("Il server ha restituito HTML invece di JSON. Verifica che l'URL sia il backend (Web Service), non il sito statico.");
+      }
       const resp = Array.isArray(data.messages) ? data.messages : [];
       setMessages((messages) => [...messages, ...resp]);
 
 
     } catch (error) {
       console.error("Errore nella richiesta chat:", error);
+      console.error("URL chiamato:", `${backendUrl}/chat`);
     } finally {
       setLoading(false);
     }
