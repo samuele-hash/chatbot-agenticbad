@@ -1,0 +1,11 @@
+.env
+.env.*
+!.env.example
+node_modules
+bin
+*.log
+server*.log
+
+# Ignora solo gli MP3 generati a runtime (message_0.mp3, message_1.mp3...)
+# message_o.json e gli altri file in audios/ vanno in Git
+audios/message_[0-9]*.mp3
