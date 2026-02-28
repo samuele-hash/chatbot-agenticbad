@@ -1,0 +1,27 @@
+@import url("https://fonts.googleapis.com/css2?family=Anton&display=swap");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --leva-sizes-rootWidth: 340px;
+}
+
+#root {
+  width: 100vw;
+  height: 100vh;
+}
+
+body {
+  margin: 0;
+  background-color: #181716ea;
+  background-image: linear-gradient(180deg, #1d1b1a 25%, #565557e7 100%);
+}
+
+body.greenScreen {
+  background-color: #03ff3a;
+  background-image: url('/models/Untitled.png'); /* Aggiornata immagine di sfondo (nome senza spazi) */
+  background-size: cover; /* Rende l'immagine proporzionata e copre l'intero sfondo */
+  background-repeat: no-repeat; /* Evita la ripetizione dell'immagine */
+  background-position: center; /* Centra l'immagine */
+}
