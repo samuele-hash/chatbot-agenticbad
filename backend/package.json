@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js --ext js"
+    "dev": "nodemon index.js --ext js",
+    "build": "npm install"
   },
   "dependencies": {
     "axios": "^1.7.9",
@@ -23,7 +24,6 @@
     "leva": "^0.9.35",
     "morgan": "^1.10.0",
     "openai": "^4.85.3",
-    "pdf-parse": "^1.1.1",
     "postcss": "^8.5.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

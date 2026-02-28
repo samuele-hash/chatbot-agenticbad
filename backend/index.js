@@ -10,7 +10,6 @@ import path from "path";
 import { fileURLToPath } from "url";
 import morgan from "morgan";
 import fileUpload from "express-fileupload";
-import pdf from "pdf-parse";
 
 dotenv.config();
 
@@ -31,7 +30,7 @@ app.use(morgan("dev"));
 app.use(fileUpload());
 
 // Assicura che le cartelle esistano
-[path.join(__dirname, "audios"), path.join(__dirname, "uploads"), path.join(__dirname, "pdfs")].forEach(dir => {
+[path.join(__dirname, "audios"), path.join(__dirname, "uploads")].forEach(dir => {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
 
@@ -41,44 +40,6 @@ app.use('/audios', express.static(path.join(__dirname, "audios")));
 app.get("/", (req, res) => {
   res.send("Hello World!");
 });
-
-app.post('/upload-pdf', async (req, res) => {
-  if (!req.files || !req.files.file) {
-    return res.status(400).send("No files were uploaded.");
-  }
-  const file = req.files.file;
-  const uploadPath = path.join(__dirname, "pdfs", file.name);
-  try {
-    await file.mv(uploadPath);
-    res.send({ message: "File uploaded successfully", filename: file.name });
-  } catch (err) {
-    res.status(500).send(err);
-  }
-});
-
-const extractTextFromPDFs = async () => {
-  const pdfDir = path.resolve(__dirname, "./pdfs"); 
-  console.log(`Lettura PDF da: ${pdfDir}`);
-  const files = await fsPromises.readdir(pdfDir);
-  if (files.length === 0) return "Nessun file PDF caricato.";
-  let combinedText = "";
-  for (const file of files) {
-    if (file.endsWith("pdf")) {
-      try {
-        const dataBuffer = await fsPromises.readFile(path.join(pdfDir, file));
-        if (dataBuffer.length === 0) {
-          console.warn(`File vuoto, saltato: ${file}`);
-          continue;
-        }
-        const data = await pdf(dataBuffer);
-        combinedText += data.text + "\n\n";
-      } catch (error) {
-        console.warn(`Errore lettura PDF ${file}:`, error.message);
-      }
-    }
-  }
-  return combinedText.slice(0, 4000) || "Nessun contenuto PDF disponibile.";
-};
 
 const textToSpeech = async (fileName, textInput) => {
   try {
