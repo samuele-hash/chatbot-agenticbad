@@ -37,10 +37,7 @@ app.use(fileUpload());
 app.use(express.static(path.join(__dirname, "dist")));
 app.use('/audios', express.static(path.join(__dirname, "audios")));
 
-app.get("/", (req, res) => {
-  res.send("Hello World!");
-});
-
+// Le API sotto devono essere prima del fallback sotto
 const textToSpeech = async (fileName, textInput) => {
   try {
     console.log(`Generazione audio...`);
@@ -188,6 +185,11 @@ app.post("/transcribe", async (req, res) => {
     console.error("Errore trascrizione:", error);
     res.status(500).json({ error: "Errore nella trascrizione" });
   }
+});
+
+// SPA: tutte le altre GET servono il frontend (index.html)
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "dist", "index.html"));
 });
 
 app.listen(port, () => {
