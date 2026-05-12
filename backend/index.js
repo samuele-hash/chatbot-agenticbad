@@ -1,21 +1,17 @@
-import { exec } from "child_process";
 import cors from "cors";
 import dotenv from "dotenv";
 import axios from "axios";
 import express from "express";
 import fs from "fs";
 import { promises as fsPromises } from "fs";
-import OpenAI from "openai";
 import path from "path";
 import { fileURLToPath } from "url";
 import morgan from "morgan";
 import fileUpload from "express-fileupload";
+import pdf from "pdf-parse";
+import { textToSpeechGoogle, transcribeWithGoogle } from "./googleSpeech.js";
 
 dotenv.config();
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || "-",
-});
 
 const app = express();
 const port = process.env.PORT || 10000;
@@ -29,39 +25,59 @@ app.use(cors());
 app.use(morgan("dev"));
 app.use(fileUpload());
 
-// Assicura che le cartelle esistano
-[path.join(__dirname, "audios"), path.join(__dirname, "uploads")].forEach(dir => {
+[path.join(__dirname, "audios"), path.join(__dirname, "uploads"), path.join(__dirname, "pdfs")].forEach(dir => {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
 
 app.use(express.static(path.join(__dirname, "dist")));
 app.use('/audios', express.static(path.join(__dirname, "audios")));
 
-// Le API sotto devono essere prima del fallback sotto
+app.get("/", (req, res) => {
+  res.send("Hello World!");
+});
+
+app.post('/upload-pdf', async (req, res) => {
+  if (!req.files || !req.files.file) {
+    return res.status(400).send("No files were uploaded.");
+  }
+  const file = req.files.file;
+  const uploadPath = path.join(__dirname, "pdfs", file.name);
+  try {
+    await file.mv(uploadPath);
+    res.send({ message: "File uploaded successfully", filename: file.name });
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
+
+const extractTextFromPDFs = async () => {
+  const pdfDir = path.resolve(__dirname, "./pdfs");
+  console.log(`Lettura PDF da: ${pdfDir}`);
+  const files = await fsPromises.readdir(pdfDir);
+  if (files.length === 0) return "Nessun file PDF caricato.";
+  let combinedText = "";
+  for (const file of files) {
+    if (file.endsWith("pdf")) {
+      try {
+        const dataBuffer = await fsPromises.readFile(path.join(pdfDir, file));
+        if (dataBuffer.length === 0) {
+          console.warn(`File vuoto, saltato: ${file}`);
+          continue;
+        }
+        const data = await pdf(dataBuffer);
+        combinedText += data.text + "\n\n";
+      } catch (error) {
+        console.warn(`Errore lettura PDF ${file}:`, error.message);
+      }
+    }
+  }
+  return combinedText.slice(0, 4000) || "Nessun contenuto PDF disponibile.";
+};
+
 const textToSpeech = async (fileName, textInput) => {
   try {
-    console.log(`Generazione audio...`);
-    const response = await axios.post(
-      "https://api.openai.com/v1/audio/speech",
-      {
-        model: "tts-1",
-        voice: "onyx",
-        input: textInput,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        responseType: "stream",
-      }
-    );
-    const writer = fs.createWriteStream(fileName);
-    response.data.pipe(writer);
-    return new Promise((resolve, reject) => {
-      writer.on("finish", resolve);
-      writer.on("error", reject);
-    });
+    console.log(`Generazione audio (Google TTS)...`);
+    await textToSpeechGoogle(fileName, textInput);
   } catch (error) {
     console.error("Errore sintesi vocale:", error.response?.data || error.message);
     throw error;
@@ -173,13 +189,9 @@ app.post("/transcribe", async (req, res) => {
     }
     await audioFile.mv(filePath);
     console.log("Audio ricevuto:", filePath);
-    const response = await openai.audio.transcriptions.create({
-      model: "whisper-1",
-      file: fs.createReadStream(filePath),
-
-    });
+    const text = await transcribeWithGoogle(filePath);
     console.log("Trascrizione completata");
-    res.json({ text: response.text });
+    res.json({ text });
     fs.unlinkSync(filePath);
   } catch (error) {
     console.error("Errore trascrizione:", error);
@@ -187,7 +199,6 @@ app.post("/transcribe", async (req, res) => {
   }
 });
 
-// SPA: tutte le altre GET servono il frontend (index.html)
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "dist", "index.html"));
 });

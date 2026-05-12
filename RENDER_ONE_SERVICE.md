@@ -21,7 +21,7 @@ Con **un solo** Web Service che usa la repo completa (root = frontend, `backend/
 
 Impostale sul Web Service (non servono due servizi):
 
-- `OPENAI_API_KEY`
+- `GOOGLE_CLOUD_API_KEY` (e opzionali `GOOGLE_TTS_*`, `GOOGLE_STT_LANGUAGE_CODE`)
 - `PUPAO_API_URL`
 - `PUPAO_BOT_ID`
 - `PUPAO_API_KEY`

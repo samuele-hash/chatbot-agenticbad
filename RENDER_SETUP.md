@@ -34,14 +34,14 @@ Il frontend chiama `/chat` e `/transcribe` sul **BACKEND**, non su agenticbad.co
 ### Impostazioni
 | Campo | Valore |
 |-------|--------|
-| Root Directory | *(vuoto)* oppure cartella root del backend |
-| Build Command | `npm install` |
-| Start Command | `npm start` |
+| Root Directory | **`backend`** se il servizio è solo API + cartella `backend/dist` già popolata dal frontend o copiata in CI; **vuoto** se usi la repo monolitica con build dalla root (vedi `RENDER_ONE_SERVICE.md`). |
+| Build Command | **`npm install`** oppure **`npm run build`** (nel `package.json` di `backend/` lo script `build` esegue `npm install`, così Render non fallisce se hai lasciato il default `npm run build`). |
+| Start Command | **`npm start`** (oppure `node index.js` se preferisci). |
 
 ### Variabili d'ambiente (Environment)
 | Chiave | Valore |
 |--------|--------|
-| `OPENAI_API_KEY` | La tua chiave OpenAI |
+| `GOOGLE_CLOUD_API_KEY` | Chiave API Google Cloud (TTS + Speech-to-Text abilitati) |
 | `PUPAO_API_URL` | URL API Pupao |
 | `PUPAO_BOT_ID` | ID del bot Pupao |
 | `PUPAO_API_KEY` | Chiave API Pupao |
