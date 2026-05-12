@@ -161,7 +161,7 @@ app.post("/chat", async (req, res) => {
       messages = [{
         text: botResponse,
         facialExpression: "smile",
-        animation: "talking"
+        animation: "idle"
       }];
     }
 
