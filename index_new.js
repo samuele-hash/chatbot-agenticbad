@@ -1,25 +1,20 @@
-import { exec } from "child_process";
 import cors from "cors";
 import dotenv from "dotenv";
 import axios from "axios";
 import express from "express";
 import fs from "fs";
 import { promises as fsPromises } from "fs";
-import OpenAI from "openai";
 import path from "path";
 import { fileURLToPath } from "url";
 import morgan from "morgan";
 import fileUpload from "express-fileupload";
 import pdf from "pdf-parse";
+import { textToSpeechGoogle, transcribeWithGoogle } from "./googleSpeech.js";
 
 dotenv.config();
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || "-",
-});
-
 const app = express();
-const port = 10000;
+const port = process.env.PORT || 10000;
 
 // Definizione di __dirname per moduli ES
 const __filename = fileURLToPath(import.meta.url);
@@ -81,31 +76,11 @@ const extractTextFromPDFs = async () => {
   return combinedText.slice(0, 4000) || "Nessun contenuto PDF disponibile.";
 };
 
-// 📢 Generazione Audio con Text-to-Speech (TTS)
+// 📢 Generazione Audio con Text-to-Speech (Google Cloud TTS)
 const textToSpeech = async (fileName, textInput) => {
   try {
     console.log(`🗣️ Generazione audio per: "${textInput}"`);
-    const response = await axios.post(
-      "https://api.openai.com/v1/audio/speech",
-      {
-        model: "tts-1",
-        voice: "onyx",
-        input: textInput,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        responseType: "stream",
-      }
-    );
-    const writer = fs.createWriteStream(fileName);
-    response.data.pipe(writer);
-    return new Promise((resolve, reject) => {
-      writer.on("finish", resolve);
-      writer.on("error", reject);
-    });
+    await textToSpeechGoogle(fileName, textInput);
   } catch (error) {
     console.error("❌ Errore nella sintesi vocale:", error.response?.data || error.message);
     throw error;
@@ -212,7 +187,7 @@ const audioFileToBase64 = async (file) => {
   }
 };
 
-// 🔥 Endpoint per trascrivere l'audio con Whisper API (solo trascrizione, senza TTS)
+// 🔥 Trascrizione con Google Cloud Speech-to-Text
 app.post("/transcribe", async (req, res) => {
   if (!req.files || !req.files.audio) {
     return res.status(400).json({ error: "Nessun file audio caricato" });
@@ -226,13 +201,9 @@ app.post("/transcribe", async (req, res) => {
     }
     await audioFile.mv(filePath);
     console.log("🎙️ Audio ricevuto e salvato:", filePath);
-    const response = await openai.audio.transcriptions.create({
-      model: "whisper-1",
-      file: fs.createReadStream(filePath),
-
-    });
-    console.log("📜 Trascrizione:", response.text);
-    res.json({ text: response.text });
+    const text = await transcribeWithGoogle(filePath);
+    console.log("📜 Trascrizione:", text);
+    res.json({ text });
     // Rimuove il file dopo la trascrizione
     fs.unlinkSync(filePath);
   } catch (error) {

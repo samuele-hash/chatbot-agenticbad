@@ -22,7 +22,6 @@
     "google-tts-api": "^2.0.2",
     "leva": "^0.9.35",
     "morgan": "^1.10.0",
-    "openai": "^4.85.3",
     "pdf-parse": "^1.1.1",
     "postcss": "^8.5.1",
     "react": "^18.3.1",
