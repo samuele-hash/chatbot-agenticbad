@@ -8,7 +8,6 @@ import path from "path";
 import { fileURLToPath } from "url";
 import morgan from "morgan";
 import fileUpload from "express-fileupload";
-import pdf from "pdf-parse";
 import { textToSpeechGoogle, transcribeWithGoogle } from "./googleSpeech.js";
 
 dotenv.config();
@@ -49,30 +48,6 @@ app.post('/upload-pdf', async (req, res) => {
     res.status(500).send(err);
   }
 });
-
-const extractTextFromPDFs = async () => {
-  const pdfDir = path.resolve(__dirname, "./pdfs");
-  console.log(`Lettura PDF da: ${pdfDir}`);
-  const files = await fsPromises.readdir(pdfDir);
-  if (files.length === 0) return "Nessun file PDF caricato.";
-  let combinedText = "";
-  for (const file of files) {
-    if (file.endsWith("pdf")) {
-      try {
-        const dataBuffer = await fsPromises.readFile(path.join(pdfDir, file));
-        if (dataBuffer.length === 0) {
-          console.warn(`File vuoto, saltato: ${file}`);
-          continue;
-        }
-        const data = await pdf(dataBuffer);
-        combinedText += data.text + "\n\n";
-      } catch (error) {
-        console.warn(`Errore lettura PDF ${file}:`, error.message);
-      }
-    }
-  }
-  return combinedText.slice(0, 4000) || "Nessun contenuto PDF disponibile.";
-};
 
 const textToSpeech = async (fileName, textInput) => {
   try {
