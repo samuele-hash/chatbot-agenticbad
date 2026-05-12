@@ -8,7 +8,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import morgan from "morgan";
 import fileUpload from "express-fileupload";
-import { textToSpeechGoogle, transcribeWithGoogle } from "./googleSpeech.js";
+import { textToSpeechGoogle, transcribeWithGoogle, plainTextForAvatar } from "./googleSpeech.js";
 
 dotenv.config();
 
@@ -102,7 +102,7 @@ app.post("/chat", async (req, res) => {
 
     if (botResponse) {
       messages = [{
-        text: botResponse,
+        text: plainTextForAvatar(botResponse),
         facialExpression: "smile",
         animation: "idle"
       }];
